@@ -1,0 +1,41 @@
+import cv2
+import matplotlib.pyplot as plt
+import urllib.request
+import os
+from pylab import rcParams
+import numpy as np
+
+fish_image_url = "http://s3-api.us-geo.objectstorage.softlayer.net/cf-courses-data/CognitiveClass/CV0101/Dataset/fish.png"
+urllib.request.urlretrieve(fish_image_url, "fish.png")
+im2 = cv2.imread("fish.png")
+fish_im_corrected = cv2.cvtColor(im2, cv2.COLOR_BGR2RGB)
+plt.axis('off')
+plt.imshow(fish_im_corrected)
+og_size=math.ceil((os.stat('fish.png').st_size)/1000)
+print("Original size of fish image is: {} Kilo Bytes".format(str(og_size)))
+
+n_rows=im2.shape[0]
+n_cols=im2.shape[1]
+transform_kmeans=im2.reshape(n_rows*n_cols,3)
+
+kmeans=KMeans(n_clusters=4)
+kmeans.fit(transform_kmeans)
+cluster_centroids=np.asarray(kmeans.cluster_centers_,dtype=np.uint8)
+
+labels=np.asarray(kmeans.labels_,dtype=np.uint8)
+labels=labels.reshape(n_rows,n_cols)
+
+compressed_image=np.ones((n_rows,n_cols,3),dtype=np.uint8)
+
+for r in range(n_rows):
+    for c in range(n_cols):
+        compressed_image[r,c,:]=cluster_centroids[labels[r,c],:]
+        
+cv2.imwrite("compressed_fish.png",compressed_image)
+c_fish=cv2.imread("compressed_fish.png")
+c_fish_corrected=cv2.cvtColor(c_fish,cv2.COLOR_BGR2RGB)
+plt.axis('off')
+plt.imshow(c_fish_corrected)
+size=math.ceil((os.stat('compressed_fish.png').st_size)/1000)
+print("Compressed size of Fish is {} Kilobytes".format(str(size)))
+print("Compression= {}%".format(str(((og_size-size)*100)/og_size)))
